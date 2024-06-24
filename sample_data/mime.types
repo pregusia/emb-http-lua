@@ -1,0 +1,14 @@
+
+txt		text/plain
+lua		text/plain
+html	text/html
+htm		text/html
+
+png		image/png
+jpg		image/jpg
+
+js		application/javascript
+json	application/json
+
+
+
