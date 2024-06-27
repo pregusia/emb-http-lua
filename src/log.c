@@ -1,5 +1,5 @@
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * @file luaapp.h
+ * @file log.c
  * @project emb-http-lua
  * @url https://github.com/pregusia/emb-http-lua
  *
@@ -27,22 +27,47 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef LUAAPP_H_
-#define LUAAPP_H_
 
-#include <lua.h>
+#include "log.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <time.h>
 
-struct lua_app {
-	struct lua_State* state;
-	struct hashmap* vfs;
-};
+// ************************************************************************************
+void build_date(char* out, int size) {
+	time_t now = time(NULL);
+	struct tm *t = localtime(&now);
 
-struct http_request_s;
+	strftime(out, size, "%Y-%m-%d %H:%M:%S", t);
+}
 
-struct lua_app* luaapp_init(struct hashmap* vfs);
-int32_t luaapp_runfile(struct lua_app* app, const char* path);
-int32_t luaapp_refcallback(struct lua_app* app, const char* name);
+// ************************************************************************************
+void log_info(const char* fmt, ...) {
+    va_list argptr;
+    va_start(argptr, fmt);
 
-int32_t luaapp_process_http(struct lua_app* app, int32_t callbackRef, struct http_request_s* req);
+    char date_str[128] = { 0 };
+    build_date(date_str, sizeof(date_str) - 1);
 
-#endif /* LUAAPP_H_ */
+    fprintf(stderr, "[%s] [INFO] ", date_str);
+    vfprintf(stderr, fmt, argptr);
+    fprintf(stderr, "\n");
+
+    va_end(argptr);
+}
+
+// ************************************************************************************
+void log_error(const char* fmt, ...) {
+    va_list argptr;
+    va_start(argptr, fmt);
+
+    char date_str[128] = { 0 };
+    build_date(date_str, sizeof(date_str) - 1);
+
+    fprintf(stderr, "[%s] [ERROR] ", date_str);
+    vfprintf(stderr, fmt, argptr);
+    fprintf(stderr, "\n");
+
+    va_end(argptr);
+}
+

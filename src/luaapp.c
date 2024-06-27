@@ -1,13 +1,36 @@
-/*
- * luaapp.c
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * @file luaapp.c
+ * @project emb-http-lua
+ * @url https://github.com/pregusia/emb-http-lua
  *
- *  Created on: Jun 24, 2024
- *      Author: pregusia
- */
+ * MIT License
+ *
+ * Copyright (c) 2024 pregusia
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "luaapp.h"
 #include "vfs.h"
 #include "httpserver.h"
+#include "log.h"
 
 #include <stdio.h>
 
@@ -22,7 +45,7 @@ struct lua_app* luaapp_init(struct hashmap* vfs) {
 	res->state = luaL_newstate();
 
 	if (!res->state) {
-		fprintf(stderr, "ERROR: Unable to create lua\n");
+		log_error("[LUA] Unable to create lua engine");
 		return NULL;
 	}
 
@@ -71,10 +94,10 @@ void luaapp_dump_stack(struct lua_app* app) {
 }
 
 // ************************************************************************************
-char* luaapp_pop_string(struct lua_app* app) {
+const char* luaapp_pop_string(struct lua_app* app) {
 	if (!app) return NULL;
 	lua_pop(app->state,1);
-	char* str = lua_tostring(app->state, 0);
+	const char* str = lua_tostring(app->state, 0);
 	if (!str || !strlen(str)) return "";
 	return str;
 }
@@ -87,7 +110,7 @@ int32_t luaapp_pop_i32(struct lua_app* app) {
 }
 
 // ************************************************************************************
-int32_t luaapp_runfile(struct lua_app* app, char* path) {
+int32_t luaapp_runfile(struct lua_app* app, const char* path) {
 	if (!app) return -1;
 	if (!path) return -1;
 	if (!app->vfs) return -1;
@@ -101,11 +124,11 @@ int32_t luaapp_runfile(struct lua_app* app, char* path) {
 
 	ret = luaL_loadbuffer(app->state, buf.data, buf.len, path);
 	if (ret != 0) {
-		char* err = luaapp_pop_string(app);
-		fprintf(stderr, "ERROR: Cannot run file %s\n", path);
+		const char* err = luaapp_pop_string(app);
+		log_error("[LUA] Cannot run file %s", path);
 
 		if (err[0] != 0) {
-			fprintf(stderr,"%s\n", err);
+			log_error("[LUA] %s", err);
 		}
 
 		vfs_buffer_free(&buf);
@@ -121,11 +144,11 @@ int32_t luaapp_runfile(struct lua_app* app, char* path) {
 	// execute it
 	ret = lua_pcall(app->state, 0, 0, 0);
 	if (ret != 0) {
-		char* err = luaapp_pop_string(app);
-		fprintf(stderr, "ERROR: Cannot run file %s\n", path);
+		const char* err = luaapp_pop_string(app);
+		log_error("[LUA] Cannot run file %s", path);
 
 		if (err[0] != 0) {
-			fprintf(stderr,"%s\n", err);
+			log_error("[LUA] %s", err);
 		}
 
 		vfs_buffer_free(&buf);
@@ -137,7 +160,7 @@ int32_t luaapp_runfile(struct lua_app* app, char* path) {
 }
 
 // ************************************************************************************
-int32_t luaapp_refcallback(struct lua_app* app, char* name) {
+int32_t luaapp_refcallback(struct lua_app* app, const char* name) {
 	if (!app) return LUA_NOREF;
 	if (!name) return LUA_NOREF;
 	if (name[0] == 0) return LUA_NOREF;
@@ -248,7 +271,7 @@ void luaapp_push_request(struct lua_app* app, struct http_request_s* request) {
 		lua_settable(app->state, -3);
 	}
 
-	// TODO: content
+	// TODO: request content
 	// TODO: contentJson?
 }
 
@@ -302,8 +325,8 @@ void luaapp_pop_response(struct lua_app* app, struct http_request_s* request) {
 			int32_t t = lua_gettop(app->state);
 			lua_pushnil(app->state);  /* first key */
 			while (lua_next(app->state, t) != 0) {
-				char* key = lua_tostring(app->state, -2);
-				char* value = luaapp_pop_string(app);
+				const char* key = lua_tostring(app->state, -2);
+				const char* value = luaapp_pop_string(app);
 
 				if (strcasecmp(key, "content-type") == 0) {
 					has_content_type = 1;
@@ -324,7 +347,7 @@ void luaapp_pop_response(struct lua_app* app, struct http_request_s* request) {
 	if (1) {
 		lua_pushstring(app->state, "content");
 		lua_gettable(app->state, -2);
-		char* content = luaapp_pop_string(app);
+		const char* content = luaapp_pop_string(app);
 		http_response_body(response, content, strlen(content));
 	}
 

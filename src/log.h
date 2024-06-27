@@ -1,7 +1,8 @@
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * @file luaapp.h
+ * @file log.h
  * @project emb-http-lua
  * @url https://github.com/pregusia/emb-http-lua
+ *
  *
  * MIT License
  *
@@ -27,22 +28,10 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef LUAAPP_H_
-#define LUAAPP_H_
+#ifndef LOG_H_
+#define LOG_H_
 
-#include <lua.h>
+void log_info(const char* fmt, ...);
+void log_error(const char* fmt, ...);
 
-struct lua_app {
-	struct lua_State* state;
-	struct hashmap* vfs;
-};
-
-struct http_request_s;
-
-struct lua_app* luaapp_init(struct hashmap* vfs);
-int32_t luaapp_runfile(struct lua_app* app, const char* path);
-int32_t luaapp_refcallback(struct lua_app* app, const char* name);
-
-int32_t luaapp_process_http(struct lua_app* app, int32_t callbackRef, struct http_request_s* req);
-
-#endif /* LUAAPP_H_ */
+#endif /* LOG_H_ */
