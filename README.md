@@ -117,4 +117,5 @@ This project uses:
 		
 
 # Licence
-	...
+
+MIT Licence
